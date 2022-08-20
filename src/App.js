@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './index.scss';
-import { Success } from './components/Success';
+import { Success } from './components/Users/Success';
 import { Users } from './components/Users';
 
 // Тут список пользователей: https://reqres.in/api/users
