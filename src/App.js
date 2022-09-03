@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Block } from './Block';
 import './index.scss';
 
@@ -6,33 +6,42 @@ function App() {
   const [fromCurrency, setFromCurrency] = useState('RUB');
   const [toCurrency, setToCurrency] = useState('USD');
   const [fromPrice, setFromPrice] = useState(0);
-  const [toPrice, setToPrice] = useState(0);
-  const [rates, setRates] = useState({});
+  const [toPrice, setToPrice] = useState(1);
+
+  const ratesRef = useRef({});
 
   useEffect(() => {
     fetch('https://cdn.cur.su/api/latest.json')
       .then((res) => res.json())
       .then((json) => {
-        setRates(json.rates);
+        ratesRef.current = json.rates;
+        onChangeToPrice(1);
       })
       .catch((err) => {
         console.log(err);
-        alert('Не удалось получить информацию');
       });
   }, []);
 
   const onChangeFromPrice = (value) => {
-    const price = value / rates[fromCurrency];
-    const result = price * rates[toCurrency];
-    setToPrice(result);
+    const price = value / ratesRef.current[fromCurrency];
+    const result = price * ratesRef.current[toCurrency];
+    setToPrice(result.toFixed(3));
     setFromPrice(value);
   };
 
   const onChangeToPrice = (value) => {
-    const result = (rates[fromCurrency] / rates[toCurrency]) * value;
-    setFromPrice(result);
+    const result = (ratesRef.current[fromCurrency] / ratesRef.current[toCurrency]) * value;
+    setFromPrice(result.toFixed(3));
     setToPrice(value);
   };
+
+  useEffect(() => {
+    onChangeFromPrice(fromPrice);
+  }, [fromCurrency]);
+
+  useEffect(() => {
+    onChangeToPrice(toPrice);
+  }, [toCurrency]);
 
   return (
     <div className="App">
