@@ -1,62 +1,75 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Block } from './Block';
+import React, { useEffect, useState } from 'react';
+import Collection from './Collection';
 import './index.scss';
 
-function App() {
-  const [fromCurrency, setFromCurrency] = useState('RUB');
-  const [toCurrency, setToCurrency] = useState('USD');
-  const [fromPrice, setFromPrice] = useState(0);
-  const [toPrice, setToPrice] = useState(1);
+const cats = [
+  { name: 'Все' },
+  { name: 'Море' },
+  { name: 'Горы' },
+  { name: 'Архитектура' },
+  { name: 'Города' },
+];
 
-  const ratesRef = useRef({});
+function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [categoryId, setCategoryId] = useState(0);
+  const [searchValue, setSearchValue] = useState('');
+  const [collections, setCollections] = useState([]);
 
   useEffect(() => {
-    fetch('https://cdn.cur.su/api/latest.json')
+    setIsLoading(true);
+
+    const category = categoryId ? `category=${categoryId}` : '';
+
+    fetch(`https://63131339a8d3f673ffc3de74.mockapi.io/images?page=${page}&limit=3&${category}`)
       .then((res) => res.json())
       .then((json) => {
-        ratesRef.current = json.rates;
-        onChangeToPrice(1);
+        setCollections(json);
       })
       .catch((err) => {
         console.log(err);
-      });
-  }, []);
-
-  const onChangeFromPrice = (value) => {
-    const price = value / ratesRef.current[fromCurrency];
-    const result = price * ratesRef.current[toCurrency];
-    setToPrice(result.toFixed(3));
-    setFromPrice(value);
-  };
-
-  const onChangeToPrice = (value) => {
-    const result = (ratesRef.current[fromCurrency] / ratesRef.current[toCurrency]) * value;
-    setFromPrice(result.toFixed(3));
-    setToPrice(value);
-  };
-
-  useEffect(() => {
-    onChangeFromPrice(fromPrice);
-  }, [fromCurrency]);
-
-  useEffect(() => {
-    onChangeToPrice(toPrice);
-  }, [toCurrency]);
+      })
+      .finally(() => setIsLoading(false));
+  }, [categoryId, page]);
 
   return (
     <div className="App">
-      <Block
-        value={fromPrice}
-        currency={fromCurrency}
-        onChangeCurrency={setFromCurrency}
-        onChangeValue={onChangeFromPrice}
-      />
-      <Block
-        value={toPrice}
-        currency={toCurrency}
-        onChangeCurrency={setToCurrency}
-        onChangeValue={onChangeToPrice}
-      />
+      <h1>Моя коллекция фотографий</h1>
+      <div className="top">
+        <ul className="tags">
+          {cats.map((obj, i) => (
+            <li
+              onClick={() => setCategoryId(i)}
+              className={categoryId === i ? 'active' : ''}
+              key={obj.name}>
+              {obj.name}
+            </li>
+          ))}
+        </ul>
+        <input
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          className="search-input"
+          placeholder="Поиск по названию"
+        />
+      </div>
+      <div className="content">
+        {isLoading ? (
+          <h2>Идет загрузка...</h2>
+        ) : (
+          collections
+            .filter((obj) => obj.name.toLowerCase().includes(searchValue.toLowerCase()))
+            .map((obj, index) => <Collection key={index} name={obj.name} images={obj.photos} />)
+        )}
+      </div>
+      <ul className="pagination">
+        {[...Array(5)].map((_, i) => (
+          <li onClick={() => setPage(i + 1)} className={page === i + 1 ? 'active' : ''}>
+            {i + 1}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
